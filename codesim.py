@@ -5,6 +5,10 @@ codesim: tool for calculating similarity between two c++ programs.
 import os
 import sys
 import argparse
+import tempfile
+import subprocess
+import re
+
 
 def check_file(file_path):
     """
@@ -14,21 +18,29 @@ def check_file(file_path):
         return False
     return True
 
-def compile_file(file_path):
+def get_hex_list_from_compile_file(file_path):
     """
-    compile code
+    compile code and return hexadecimal list
     """
-    pass
-    binary_file_path = ''
-    return binary_file_path
+    temp_file_path = tempfile.mkstemp(suffix='.o', dir='./')[1]
+    # print("Temp File Path: {}".format(temp_file_path))
+    subprocess.call(['gcc', '-c', '-o', temp_file_path, file_path])
+    p = subprocess.Popen(['objdump', '-s', '-j', '.text', temp_file_path], stdout=subprocess.PIPE)
+    output = p.communicate()[0].decode("utf-8")
+    # remove temp file
+    subprocess.call(['rm', temp_file_path])
+    hex_pattern =  r'[0-9a-f]{8}'
+    return re.findall(hex_pattern, output)
 
-def check_similarity(binary_code1, binary_code2):
+def check_similarity(source_hex_list, target_hex_list):
     """
-    calculate similarity between binary_code1 and binary_code2
+    calculate similarity between source_hex_list and target_hex_list
     """
-    similarity = 0
-    pass
-    return similarity 
+    # print(source_hex_list)
+    # print(target_hex_list)
+    match_hex_list = [hex for hex in source_hex_list if hex in target_hex_list]
+    similarity = float(len(match_hex_list)) / min(len(source_hex_list), len(target_hex_list))
+    return similarity
 
 
 if __name__ == '__main__':
@@ -48,17 +60,17 @@ if __name__ == '__main__':
         sys.stderr.write("ERROR: INVALID FILE PATH, CHECK PATH SPELLING AND FILE SUFFIX.\n")
         exit(-1)
 
-    # compile file
-    source_binary_file_path = compile_file(source_file_path)
-    target_binary_file_path = compile_file(target_file_path)
-
-    # calculate similarity
-    if args.verbose:
-        # debug mode
-        pass
-    else:
-        # normal mode
-        pass
-    similarity = check_similarity(source_binary_file_path, target_binary_file_path)
-    print(similarity)
+    # compile file and get hex tuple
+    source_hex_list = get_hex_list_from_compile_file(source_file_path)
+    target_hex_list = get_hex_list_from_compile_file(target_file_path)
     
+    similarity = check_similarity(source_hex_list, target_hex_list)
+    print("{:.1f}".format(similarity*100))
+    # calculate similarity
+    # if args.verbose:
+    #     # debug mode
+    #     pass
+    # else:
+    #     # normal mode
+    #     pass
+    # print("End.")

@@ -43,11 +43,39 @@ def check_similarity(source_hex_list, target_hex_list, verbose=False):
     """
     calculate similarity between source_hex_list and target_hex_list
     """
-    match_hex_list = [hex for hex in source_hex_list if hex in target_hex_list]
-    if verbose:
-        print("Match Hex List: %r" % match_hex_list)
-    similarity = float(len(match_hex_list)) * 2 / (len(source_hex_list) + len(target_hex_list))
-    return similarity
+    # match_hex_list = [hex for hex in source_hex_list if hex in target_hex_list]
+    # if verbose:
+    #     print("Match Hex List: %r" % match_hex_list)
+    # similarity = float(len(match_hex_list)) * 2 / (len(source_hex_list) + len(target_hex_list))
+    # Longest Common Substring
+    dp = [0 for i in range(len(source_hex_list)+1) for j in range(len(source_hex_list)+1)]
+    for i in range(len(source_hex_list)):
+        for j in range(len(target_hex_list)):
+            if source_hex_list[i] == target_hex_list[j]:
+                dp[i+1][j+1] = dp[i][j] + 1
+    
+    max_value_list = [max(line) for line in dp]
+    lcs_len = max(max_value_list)
+    common_substring_dic = {}
+    for i in range(1, lcs_len+1):
+        common_substring_dic[i] = 0
+    
+    # get common substrings statistic dic
+    i = len(max_value_list) -1
+    while i >= 0:
+        max_value = max_value_list[i]
+        if max_value > 0:
+            common_substring_dic[max_value] += 1
+            # jump over max_value - 1 lines
+            i -= max_value - 1
+        i -= 1
+    
+    # calculate similarity
+    sum = 0.0
+    for weight, num in common_substring_dic.items():
+        sum += weight * num
+    
+    return sum * 2 / (len(source_hex_list)**2 / 10 + len(target_hex_list)**2 / 10)  
 
 
 if __name__ == '__main__':
